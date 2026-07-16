@@ -29,7 +29,15 @@ export default async function CapsulesPage() {
 
   return (
     <>
-      <RoomHeader title="Capsules" backHref="/more" coupleId={coupleId} userId={userId} unreadCount={unreadCount} />
+      <RoomHeader
+        title="Capsules"
+        backHref="/more"
+        coupleId={coupleId}
+        userId={userId}
+        unreadCount={unreadCount}
+        partnerId={partner?.id}
+        partnerName={partner?.display_name}
+      />
       <section className="ss-hero slim">
         <h1 className="ss-greet sm">
           Time <em>capsules</em>

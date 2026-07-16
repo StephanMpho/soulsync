@@ -6,7 +6,7 @@ import { togglePackingItem, addPackingItem } from "./actions";
 type Item = { id: string; name: string; done: boolean };
 
 export default async function TravelPage() {
-  const { supabase, coupleId, userId, unreadCount } = await requireCoupleContext();
+  const { supabase, coupleId, userId, unreadCount, partner } = await requireCoupleContext();
 
   const { data: items } = await supabase
     .from("packing_items")
@@ -17,7 +17,15 @@ export default async function TravelPage() {
 
   return (
     <>
-      <RoomHeader title="Travel" backHref="/more" coupleId={coupleId} userId={userId} unreadCount={unreadCount} />
+      <RoomHeader
+        title="Travel"
+        backHref="/more"
+        coupleId={coupleId}
+        userId={userId}
+        unreadCount={unreadCount}
+        partnerId={partner?.id}
+        partnerName={partner?.display_name}
+      />
       <section className="ss-hero slim">
         <h1 className="ss-greet sm">
           Travel <em>together</em>

@@ -11,7 +11,7 @@ function fmtR(cents: number) {
 }
 
 export default async function FinancePage() {
-  const { supabase, coupleId, userId, unreadCount } = await requireCoupleContext();
+  const { supabase, coupleId, userId, unreadCount, partner } = await requireCoupleContext();
 
   const { data: funds } = await supabase
     .from("funds")
@@ -28,7 +28,15 @@ export default async function FinancePage() {
 
   return (
     <>
-      <RoomHeader title="Finance" backHref="/more" coupleId={coupleId} userId={userId} unreadCount={unreadCount} />
+      <RoomHeader
+        title="Finance"
+        backHref="/more"
+        coupleId={coupleId}
+        userId={userId}
+        unreadCount={unreadCount}
+        partnerId={partner?.id}
+        partnerName={partner?.display_name}
+      />
       <section className="ss-hero slim">
         <h1 className="ss-greet sm">
           Finance <em>hub</em>

@@ -4,11 +4,19 @@ import { RoomHeader } from "../RoomHeader";
 import { MORE_ROOMS } from "@/lib/rooms";
 
 export default async function MorePage() {
-  const { coupleId, userId, unreadCount } = await requireCoupleContext();
+  const { coupleId, userId, unreadCount, partner } = await requireCoupleContext();
 
   return (
     <>
-      <RoomHeader title="More" backHref="/" coupleId={coupleId} userId={userId} unreadCount={unreadCount} />
+      <RoomHeader
+        title="More"
+        backHref="/"
+        coupleId={coupleId}
+        userId={userId}
+        unreadCount={unreadCount}
+        partnerId={partner?.id}
+        partnerName={partner?.display_name}
+      />
       <section className="ss-hero slim">
         <h1 className="ss-greet sm">
           More of <em>your home</em>

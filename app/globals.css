@@ -191,6 +191,20 @@
 .ss-voice-wave i.played { background: #6D2E46; }
 .ss-voice-dur { font-variant-numeric: tabular-nums; font-size: 12px; color: #2D2D2D99; min-width: 30px; text-align: right; }
 
+.ss-heartbeat { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #2D2D2D99; white-space: nowrap; }
+.ss-hb-dot { width: 8px; height: 8px; border-radius: 50%; background: #2D2D2D22; flex-shrink: 0; }
+.ss-hb-dot.on { background: #3fae5c; box-shadow: 0 0 0 3px #3fae5c22; }
+.ss-hb-heart { flex-shrink: 0; color: #6D2E46; }
+.ss-hb-heart.pulse { animation: hbbeat 1.15s ease-in-out infinite; transform-origin: center; }
+@keyframes hbbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.22); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.14); }
+  58% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .ss-hb-heart.pulse { animation: none; } }
+
 .ss-stars { position: relative; height: 100px; width: 100%; max-width: 360px; margin: 0 auto 24px; }
 .star { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: #D6B370; box-shadow: 0 0 24px 6px #D6B37066; }
 .star.a { left: 8%; animation: driftA 2.4s cubic-bezier(.22,.61,.36,1) forwards; }

@@ -36,7 +36,15 @@ export default async function JournalPage() {
 
   return (
     <>
-      <RoomHeader title="Journal" backHref="/" coupleId={coupleId} userId={userId} unreadCount={unreadCount} />
+      <RoomHeader
+        title="Journal"
+        backHref="/"
+        coupleId={coupleId}
+        userId={userId}
+        unreadCount={unreadCount}
+        partnerId={partner?.id}
+        partnerName={partner?.display_name}
+      />
       <section className="ss-hero slim">
         <h1 className="ss-greet sm">
           Couple <em>journal</em>

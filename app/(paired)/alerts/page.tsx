@@ -21,7 +21,15 @@ export default async function AlertsPage() {
 
   return (
     <>
-      <RoomHeader title="Alerts" backHref="/" coupleId={coupleId} userId={userId} unreadCount={0} />
+      <RoomHeader
+        title="Alerts"
+        backHref="/"
+        coupleId={coupleId}
+        userId={userId}
+        unreadCount={0}
+        partnerId={partner?.id}
+        partnerName={partner?.display_name}
+      />
       <section className="ss-hero slim">
         <h1 className="ss-greet sm">
           While you were <em>away</em>

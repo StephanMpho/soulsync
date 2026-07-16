@@ -5,6 +5,7 @@ import { MOODS, ROOMS } from "@/lib/rooms";
 import { SignOutButton } from "@/app/SignOutButton";
 import { WaitingCard } from "@/app/WaitingCard";
 import { NotificationBell } from "./NotificationBell";
+import { HeartbeatIndicator } from "./HeartbeatIndicator";
 import { LoveNoteCard } from "./LoveNoteCard";
 import { PushSubscribeButton } from "./PushSubscribeButton";
 import { getCompanionInsight } from "@/lib/companion";
@@ -129,6 +130,14 @@ export default async function HomePage() {
       <header className="ss-topbar">
         <div className="ss-wordmark">SoulSync</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {partner && (
+            <HeartbeatIndicator
+              coupleId={coupleId}
+              userId={userId}
+              partnerId={partner.id}
+              partnerName={partner.display_name}
+            />
+          )}
           <NotificationBell coupleId={coupleId} userId={userId} initialUnread={unreadCount} />
           <SignOutButton />
         </div>

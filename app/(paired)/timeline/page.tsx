@@ -27,7 +27,7 @@ type TimelineEvent = {
 type ReactionRow = { entry_id: string; emoji: string; user_id: string };
 
 export default async function TimelinePage() {
-  const { supabase, coupleId, userId, unreadCount } = await requireCoupleContext();
+  const { supabase, coupleId, userId, unreadCount, partner } = await requireCoupleContext();
 
   const [{ data: events }, { data: reactions }] = await Promise.all([
     supabase
@@ -49,7 +49,15 @@ export default async function TimelinePage() {
 
   return (
     <>
-      <RoomHeader title="Timeline" backHref="/" coupleId={coupleId} userId={userId} unreadCount={unreadCount} />
+      <RoomHeader
+        title="Timeline"
+        backHref="/"
+        coupleId={coupleId}
+        userId={userId}
+        unreadCount={unreadCount}
+        partnerId={partner?.id}
+        partnerName={partner?.display_name}
+      />
       <section className="ss-hero slim">
         <h1 className="ss-greet sm">
           Your <em>living timeline</em>
