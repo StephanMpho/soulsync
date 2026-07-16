@@ -185,6 +185,7 @@ export default async function HomePage() {
                     openedAt: latestNote.opened_at,
                     audioUrl,
                     durationSeconds: latestNote.duration_seconds,
+                    hasAudio: Boolean(latestNote.audio_path),
                   }
                 : null
             }

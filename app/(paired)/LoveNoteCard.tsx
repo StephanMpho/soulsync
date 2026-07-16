@@ -201,6 +201,7 @@ function SealedNote({
   audioUrl,
   durationSeconds,
   alreadyOpened,
+  hasAudio,
 }: {
   noteId: string;
   partnerName: string;
@@ -209,6 +210,7 @@ function SealedNote({
   audioUrl: string | null;
   durationSeconds: number | null;
   alreadyOpened: boolean;
+  hasAudio: boolean;
 }) {
   const [opened, setOpened] = useState(alreadyOpened);
   const [, startTransition] = useTransition();
@@ -236,6 +238,11 @@ function SealedNote({
 
   return (
     <div className="ss-note-reveal" style={{ marginTop: 14 }}>
+      {hasAudio && !audioUrl && (
+        <p className="ss-muted" style={{ marginBottom: text ? 12 : 0 }}>
+          Couldn&apos;t load this voice note — try closing and reopening the app.
+        </p>
+      )}
       {audioUrl && (
         <>
           <div className="ss-muted" style={{ fontSize: 12, marginBottom: 8 }}>
@@ -277,6 +284,7 @@ export function LoveNoteCard({
     openedAt: string | null;
     audioUrl: string | null;
     durationSeconds: number | null;
+    hasAudio: boolean;
   } | null;
   mine: { audioUrl: string | null; durationSeconds: number | null; when: string } | null;
 }) {
@@ -364,6 +372,7 @@ export function LoveNoteCard({
 
       {latest && (
         <SealedNote
+          key={latest.id}
           noteId={latest.id}
           partnerName={partnerName}
           text={latest.text}
@@ -371,6 +380,7 @@ export function LoveNoteCard({
           audioUrl={latest.audioUrl}
           durationSeconds={latest.durationSeconds}
           alreadyOpened={Boolean(latest.openedAt)}
+          hasAudio={latest.hasAudio}
         />
       )}
     </section>
