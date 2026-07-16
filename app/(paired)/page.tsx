@@ -11,7 +11,14 @@ import { getCompanionInsight } from "@/lib/companion";
 import { getOnThisDayMemories } from "@/lib/memories";
 import { setMood } from "./actions";
 
-type LoveNote = { id: string; body: string; created_at: string; opened_at: string | null };
+type LoveNote = {
+  id: string;
+  body: string | null;
+  created_at: string;
+  opened_at: string | null;
+  audio_path: string | null;
+  duration_seconds: number | null;
+};
 
 export default async function HomePage() {
   const { supabase, userId, displayName, mood, coupleId, partner, unreadCount, unseenActivity } =
@@ -34,7 +41,7 @@ export default async function HomePage() {
     partner
       ? supabase
           .from("love_notes")
-          .select("id, body, created_at, opened_at")
+          .select("id, body, created_at, opened_at, audio_path, duration_seconds")
           .eq("couple_id", coupleId)
           .eq("from_id", partner.id)
           .order("created_at", { ascending: false })
@@ -45,6 +52,11 @@ export default async function HomePage() {
     getCompanionInsight(supabase, coupleId),
     getOnThisDayMemories(supabase, coupleId),
   ]);
+
+  const audioUrl = latestNote?.audio_path
+    ? (await supabase.storage.from("voice-notes").createSignedUrl(latestNote.audio_path, 3600)).data
+        ?.signedUrl ?? null
+    : null;
 
   return (
     <>
@@ -150,6 +162,8 @@ export default async function HomePage() {
                       year: "numeric",
                     }),
                     openedAt: latestNote.opened_at,
+                    audioUrl,
+                    durationSeconds: latestNote.duration_seconds,
                   }
                 : null
             }

@@ -44,6 +44,51 @@ export async function sendLoveNote(formData: FormData) {
   revalidatePath("/");
 }
 
+function extensionFor(mimeType: string) {
+  if (mimeType.includes("mp4")) return "mp4";
+  if (mimeType.includes("aac")) return "aac";
+  return "webm";
+}
+
+// 20 seconds of opus/aac voice audio is on the order of tens of KB — well
+// under the default Server Action body-size limit, so no upload config was
+// needed to support this.
+export async function sendVoiceNote(formData: FormData) {
+  const file = formData.get("audio");
+  const durationRaw = formData.get("duration");
+  if (!(file instanceof File) || file.size === 0) return;
+
+  const actor = await getActor();
+  if (!actor) return;
+  const { supabase, userId, displayName, coupleId } = actor;
+
+  const path = `${coupleId}/${crypto.randomUUID()}.${extensionFor(file.type)}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  const { error: uploadError } = await supabase.storage
+    .from("voice-notes")
+    .upload(path, bytes, { contentType: file.type || "audio/webm" });
+  if (uploadError) return;
+
+  const duration = typeof durationRaw === "string" ? Math.round(Number(durationRaw)) : null;
+
+  await supabase.from("love_notes").insert({
+    couple_id: coupleId,
+    from_id: userId,
+    audio_path: path,
+    duration_seconds: duration,
+  });
+
+  await logActivity(supabase, coupleId, userId, "note", `${displayName} sent a voice note ♡`);
+  await notifyPartner(supabase, coupleId, userId, "note", {
+    title: `${displayName} ♡`,
+    body: "Sent you a voice note — tap to listen.",
+    url: "/",
+  });
+
+  revalidatePath("/");
+}
+
 export async function sendPing() {
   const actor = await getActor();
   if (!actor) return;
