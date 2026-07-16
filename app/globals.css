@@ -16,7 +16,7 @@
 .ss-topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 0 6px; gap: 10px; min-height: 58px; }
 .ss-wordmark { font-family: 'Cormorant Garamond', serif; font-size: 20px; letter-spacing: .22em; text-transform: uppercase; color: #6D2E46; }
 .ss-screen-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: #6D2E46; letter-spacing: .04em; }
-.ss-back { font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: #6D2E46; padding: 8px 10px 8px 0; margin: 8px 0 0; }
+.ss-back { font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: #6D2E46; padding: 8px 10px 8px 0; margin: 8px 0 0; white-space: nowrap; flex-shrink: 0; }
 .ss-back:hover { text-decoration: underline; }
 .ss-back:focus-visible { outline: 2px solid #6D2E46; border-radius: 6px; }
 .ss-save { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #A8B8A5; white-space: nowrap; }
@@ -191,8 +191,8 @@
 .ss-voice-wave i.played { background: #6D2E46; }
 .ss-voice-dur { font-variant-numeric: tabular-nums; font-size: 12px; color: #2D2D2D99; min-width: 30px; text-align: right; }
 
-.ss-heartbeat { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #2D2D2D99; white-space: nowrap; }
-.ss-hb-dot { width: 8px; height: 8px; border-radius: 50%; background: #2D2D2D22; flex-shrink: 0; }
+.ss-hb-badge { position: relative; flex-shrink: 0; font: inherit; cursor: default; border: 1px solid #2D2D2D1f; background: #FAF7F3; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.ss-hb-dot { width: 9px; height: 9px; border-radius: 50%; background: #2D2D2D22; flex-shrink: 0; }
 .ss-hb-dot.on { background: #3fae5c; box-shadow: 0 0 0 3px #3fae5c22; }
 .ss-hb-heart { flex-shrink: 0; color: #6D2E46; }
 .ss-hb-heart.pulse { animation: hbbeat 1.15s ease-in-out infinite; transform-origin: center; }
