@@ -10,6 +10,7 @@ import { PushSubscribeButton } from "./PushSubscribeButton";
 import { getCompanionInsight } from "@/lib/companion";
 import { getOnThisDayMemories } from "@/lib/memories";
 import { setMood } from "./actions";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type LoveNote = {
   id: string;
@@ -20,12 +21,40 @@ type LoveNote = {
   duration_seconds: number | null;
 };
 
+function formatWhen(iso: string) {
+  return new Date(iso).toLocaleDateString("en-ZA", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+async function toNoteView(supabase: SupabaseClient, note: LoveNote | null) {
+  if (!note) return null;
+  const audioUrl = note.audio_path
+    ? (await supabase.storage.from("voice-notes").createSignedUrl(note.audio_path, 3600)).data?.signedUrl ?? null
+    : null;
+  return {
+    id: note.id,
+    text: note.body,
+    when: formatWhen(note.created_at),
+    createdAt: note.created_at,
+    openedAt: note.opened_at,
+    audioUrl,
+    durationSeconds: note.duration_seconds,
+    hasAudio: Boolean(note.audio_path),
+  };
+}
+
 export default async function HomePage() {
   const { supabase, userId, displayName, mood, coupleId, partner, unreadCount, unseenActivity } =
     await requireCoupleContext();
 
-  const [{ data: couple }, { data: pendingInvite }, { data: latestNote }, { data: myLatestNote }, insight, memories] =
-    await Promise.all([
+  const [
+    { data: couple },
+    { data: pendingInvite },
+    { data: latestTextNote },
+    { data: latestVoiceNote },
+    { data: myLatestNote },
+    insight,
+    memories,
+  ] = await Promise.all([
     supabase
       .from("couples")
       .select("met_date, anniversary")
@@ -39,12 +68,28 @@ export default async function HomePage() {
       .eq("status", "sent")
       .maybeSingle()
       .overrideTypes<{ token: string } | null>(),
+    // Latest text and latest voice note from the partner are tracked as two
+    // independent slots — otherwise a text note sent after a voice note
+    // (or vice versa) silently buries the older one with no way to reach it.
     partner
       ? supabase
           .from("love_notes")
           .select("id, body, created_at, opened_at, audio_path, duration_seconds")
           .eq("couple_id", coupleId)
           .eq("from_id", partner.id)
+          .not("body", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          .overrideTypes<LoveNote | null>()
+      : Promise.resolve({ data: null as LoveNote | null }),
+    partner
+      ? supabase
+          .from("love_notes")
+          .select("id, body, created_at, opened_at, audio_path, duration_seconds")
+          .eq("couple_id", coupleId)
+          .eq("from_id", partner.id)
+          .not("audio_path", "is", null)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle()
@@ -64,13 +109,9 @@ export default async function HomePage() {
     getOnThisDayMemories(supabase, coupleId),
   ]);
 
-  const [audioUrl, myAudioUrl] = await Promise.all([
-    latestNote?.audio_path
-      ? supabase.storage
-          .from("voice-notes")
-          .createSignedUrl(latestNote.audio_path, 3600)
-          .then((r) => r.data?.signedUrl ?? null)
-      : Promise.resolve(null),
+  const [textView, voiceView, myVoiceUrl] = await Promise.all([
+    toNoteView(supabase, latestTextNote),
+    toNoteView(supabase, latestVoiceNote),
     myLatestNote?.audio_path
       ? supabase.storage
           .from("voice-notes")
@@ -78,6 +119,10 @@ export default async function HomePage() {
           .then((r) => r.data?.signedUrl ?? null)
       : Promise.resolve(null),
   ]);
+
+  const latestNotes = [textView, voiceView]
+    .filter((n): n is NonNullable<typeof n> => n !== null)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <>
@@ -172,33 +217,13 @@ export default async function HomePage() {
         {partner && (
           <LoveNoteCard
             partnerName={partner.display_name}
-            latest={
-              latestNote
-                ? {
-                    id: latestNote.id,
-                    text: latestNote.body,
-                    when: new Date(latestNote.created_at).toLocaleDateString("en-ZA", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    }),
-                    openedAt: latestNote.opened_at,
-                    audioUrl,
-                    durationSeconds: latestNote.duration_seconds,
-                    hasAudio: Boolean(latestNote.audio_path),
-                  }
-                : null
-            }
+            latestNotes={latestNotes}
             mine={
               myLatestNote?.audio_path
                 ? {
-                    audioUrl: myAudioUrl,
+                    audioUrl: myVoiceUrl,
                     durationSeconds: myLatestNote.duration_seconds,
-                    when: new Date(myLatestNote.created_at).toLocaleDateString("en-ZA", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    }),
+                    when: formatWhen(myLatestNote.created_at),
                   }
                 : null
             }

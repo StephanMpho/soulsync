@@ -271,21 +271,23 @@ function SealedNote({
   );
 }
 
+type NoteView = {
+  id: string;
+  text: string | null;
+  when: string;
+  openedAt: string | null;
+  audioUrl: string | null;
+  durationSeconds: number | null;
+  hasAudio: boolean;
+};
+
 export function LoveNoteCard({
   partnerName,
-  latest,
+  latestNotes,
   mine,
 }: {
   partnerName: string;
-  latest: {
-    id: string;
-    text: string | null;
-    when: string;
-    openedAt: string | null;
-    audioUrl: string | null;
-    durationSeconds: number | null;
-    hasAudio: boolean;
-  } | null;
+  latestNotes: NoteView[];
   mine: { audioUrl: string | null; durationSeconds: number | null; when: string } | null;
 }) {
   const [pending, startTransition] = useTransition();
@@ -370,19 +372,19 @@ export function LoveNoteCard({
         </div>
       )}
 
-      {latest && (
+      {latestNotes.map((note) => (
         <SealedNote
-          key={latest.id}
-          noteId={latest.id}
+          key={note.id}
+          noteId={note.id}
           partnerName={partnerName}
-          text={latest.text}
-          when={latest.when}
-          audioUrl={latest.audioUrl}
-          durationSeconds={latest.durationSeconds}
-          alreadyOpened={Boolean(latest.openedAt)}
-          hasAudio={latest.hasAudio}
+          text={note.text}
+          when={note.when}
+          audioUrl={note.audioUrl}
+          durationSeconds={note.durationSeconds}
+          alreadyOpened={Boolean(note.openedAt)}
+          hasAudio={note.hasAudio}
         />
-      )}
+      ))}
     </section>
   );
 }
