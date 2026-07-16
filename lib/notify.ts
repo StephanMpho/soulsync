@@ -10,6 +10,7 @@ type Restraint = "immediate" | "batched" | "none";
 
 const RESTRAINT: Record<string, Restraint> = {
   note: "immediate",
+  ping: "immediate",
   capsule_opened: "immediate",
   memory: "batched",
   journal: "batched",

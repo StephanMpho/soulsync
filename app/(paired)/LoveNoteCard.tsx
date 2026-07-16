@@ -1,19 +1,73 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { sendLoveNote } from "./actions";
+import { sendLoveNote, sendPing, openLoveNote } from "./actions";
 
 const QUICK = ["Thinking of you", "Miss you", "So proud of you", "Can't wait to see you"];
+
+function SealedNote({
+  noteId,
+  partnerName,
+  text,
+  when,
+}: {
+  noteId: string;
+  partnerName: string;
+  text: string;
+  when: string;
+}) {
+  const [opened, setOpened] = useState(false);
+  const [, startTransition] = useTransition();
+
+  const open = () => {
+    setOpened(true);
+    startTransition(() => openLoveNote(noteId));
+  };
+
+  if (!opened) {
+    return (
+      <button
+        type="button"
+        className="ss-mini-envelope"
+        onClick={open}
+        aria-label={`Open the sealed note from ${partnerName}`}
+        style={{ marginTop: 14 }}
+      >
+        <div className="ss-mini-env-flap" />
+        <div className="ss-mini-seal">{partnerName.charAt(0).toUpperCase()}</div>
+        <div className="ss-mini-env-name">A sealed note from {partnerName}</div>
+      </button>
+    );
+  }
+
+  return (
+    <p className="ss-entry-text ss-note-reveal" style={{ marginTop: 14 }}>
+      &ldquo;{text}&rdquo;
+      <span
+        style={{
+          display: "block",
+          fontFamily: "'Inter', sans-serif",
+          fontSize: 12,
+          color: "#2D2D2D99",
+          marginTop: 4,
+        }}
+      >
+        — the latest note from {partnerName}, {when}
+      </span>
+    </p>
+  );
+}
 
 export function LoveNoteCard({
   partnerName,
   latest,
 }: {
   partnerName: string;
-  latest: { text: string; when: string } | null;
+  latest: { id: string; text: string; when: string; openedAt: string | null } | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [sent, setSent] = useState(false);
+  const [pinged, setPinged] = useState(false);
   const [text, setText] = useState("");
 
   const send = (value: string) => {
@@ -28,10 +82,29 @@ export function LoveNoteCard({
     });
   };
 
+  const ping = () => {
+    if (pending) return;
+    startTransition(async () => {
+      await sendPing();
+      setPinged(true);
+      setTimeout(() => setPinged(false), 2500);
+    });
+  };
+
   return (
     <section className="ss-card col-12 ss-rosecard">
       <div className="ss-kicker">Send {partnerName} a love note ♡</div>
-      <div className="ss-moods" style={{ marginBottom: 10 }}>
+
+      <button type="button" className="ss-ping-btn" disabled={pending} onClick={ping}>
+        ♡ Thinking of you, {partnerName} — send instantly
+      </button>
+      {pinged && (
+        <p className="ss-muted" style={{ margin: "8px 0 0" }}>
+          Sent — no typing required ♡
+        </p>
+      )}
+
+      <div className="ss-moods" style={{ margin: "14px 0 10px" }}>
         {QUICK.map((q) => (
           <button key={q} type="button" className="ss-mood" disabled={pending} onClick={() => send(q)}>
             {q} ♡
@@ -57,22 +130,26 @@ export function LoveNoteCard({
           Sent ♡ — {partnerName} will see it the moment they open the app.
         </p>
       )}
-      {latest && (
-        <p className="ss-entry-text" style={{ marginTop: 14 }}>
-          &ldquo;{latest.text}&rdquo;
-          <span
-            style={{
-              display: "block",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 12,
-              color: "#2D2D2D99",
-              marginTop: 4,
-            }}
-          >
-            — the latest note from {partnerName}, {latest.when}
-          </span>
-        </p>
-      )}
+
+      {latest &&
+        (latest.openedAt ? (
+          <p className="ss-entry-text" style={{ marginTop: 14 }}>
+            &ldquo;{latest.text}&rdquo;
+            <span
+              style={{
+                display: "block",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12,
+                color: "#2D2D2D99",
+                marginTop: 4,
+              }}
+            >
+              — the latest note from {partnerName}, {latest.when}
+            </span>
+          </p>
+        ) : (
+          <SealedNote noteId={latest.id} partnerName={partnerName} text={latest.text} when={latest.when} />
+        ))}
     </section>
   );
 }

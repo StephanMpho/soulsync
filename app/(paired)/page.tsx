@@ -10,7 +10,7 @@ import { PushSubscribeButton } from "./PushSubscribeButton";
 import { getCompanionInsight } from "@/lib/companion";
 import { setMood } from "./actions";
 
-type LoveNote = { body: string; created_at: string };
+type LoveNote = { id: string; body: string; created_at: string; opened_at: string | null };
 
 export default async function HomePage() {
   const { supabase, userId, displayName, mood, coupleId, partner, unreadCount, unseenActivity } =
@@ -33,7 +33,7 @@ export default async function HomePage() {
     partner
       ? supabase
           .from("love_notes")
-          .select("body, created_at")
+          .select("id, body, created_at, opened_at")
           .eq("couple_id", coupleId)
           .eq("from_id", partner.id)
           .order("created_at", { ascending: false })
@@ -123,12 +123,14 @@ export default async function HomePage() {
             latest={
               latestNote
                 ? {
+                    id: latestNote.id,
                     text: latestNote.body,
                     when: new Date(latestNote.created_at).toLocaleDateString("en-ZA", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",
                     }),
+                    openedAt: latestNote.opened_at,
                   }
                 : null
             }

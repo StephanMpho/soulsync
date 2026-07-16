@@ -44,6 +44,35 @@ export async function sendLoveNote(formData: FormData) {
   revalidatePath("/");
 }
 
+export async function sendPing() {
+  const actor = await getActor();
+  if (!actor) return;
+  const { supabase, userId, displayName, coupleId } = actor;
+
+  await logActivity(supabase, coupleId, userId, "ping", `${displayName} sent a thinking-of-you ping ♡`);
+  await notifyPartner(supabase, coupleId, userId, "ping", {
+    title: `${displayName} is thinking of you ♡`,
+    body: "No reason — just wanted you to know.",
+    url: "/",
+  });
+
+  revalidatePath("/");
+}
+
+export async function openLoveNote(noteId: string) {
+  const actor = await getActor();
+  if (!actor) return;
+  const { supabase } = actor;
+
+  await supabase
+    .from("love_notes")
+    .update({ opened_at: new Date().toISOString() })
+    .eq("id", noteId)
+    .is("opened_at", null);
+
+  revalidatePath("/");
+}
+
 export async function subscribeToPush(subscriptionJson: string) {
   const parsed = JSON.parse(subscriptionJson) as { endpoint: string; keys: { p256dh: string; auth: string } };
 

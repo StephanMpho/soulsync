@@ -1,8 +1,10 @@
 import { requireCoupleContext } from "@/lib/session";
 import { RoomHeader } from "../RoomHeader";
 import { JournalForm } from "./JournalForm";
+import { ReactionBar, type Reaction } from "../ReactionBar";
 
 type Entry = { id: string; kind: string; body: string; author_id: string; created_at: string };
+type ReactionRow = { entry_id: string; emoji: string; user_id: string };
 
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -11,12 +13,23 @@ function capitalize(s: string) {
 export default async function JournalPage() {
   const { supabase, coupleId, displayName, userId, partner, unreadCount } = await requireCoupleContext();
 
-  const { data: entries } = await supabase
-    .from("journal_entries")
-    .select("id, kind, body, author_id, created_at")
-    .eq("couple_id", coupleId)
-    .order("created_at", { ascending: false })
-    .overrideTypes<Entry[]>();
+  const [{ data: entries }, { data: reactions }] = await Promise.all([
+    supabase
+      .from("journal_entries")
+      .select("id, kind, body, author_id, created_at")
+      .eq("couple_id", coupleId)
+      .order("created_at", { ascending: false })
+      .overrideTypes<Entry[]>(),
+    supabase
+      .from("reactions")
+      .select("entry_id, emoji, user_id")
+      .eq("couple_id", coupleId)
+      .eq("entry_type", "journal")
+      .overrideTypes<ReactionRow[]>(),
+  ]);
+
+  const reactionsFor = (entryId: string): Reaction[] =>
+    (reactions ?? []).filter((r) => r.entry_id === entryId).map((r) => ({ emoji: r.emoji, user_id: r.user_id }));
 
   const nameFor = (authorId: string) =>
     authorId === userId ? displayName : (partner?.display_name ?? "Partner");
@@ -52,6 +65,7 @@ export default async function JournalPage() {
                 })}
               </div>
               <p className="ss-entry-text">{e.body}</p>
+              <ReactionBar entryType="journal" entryId={e.id} userId={userId} reactions={reactionsFor(e.id)} />
             </div>
           ))}
         </section>
