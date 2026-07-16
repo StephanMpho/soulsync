@@ -65,7 +65,13 @@ function VoicePlayer({ src, duration }: { src: string; duration: number | null }
   );
 }
 
-function VoiceRecorder({ onSent }: { onSent: () => void }) {
+function VoiceRecorder({
+  onSent,
+  onStageChange,
+}: {
+  onSent: () => void;
+  onStageChange: (stage: "idle" | "recording" | "preview") => void;
+}) {
   const [supported, setSupported] = useState(true);
   const [stage, setStage] = useState<"idle" | "recording" | "preview">("idle");
   const [seconds, setSeconds] = useState(0);
@@ -83,6 +89,10 @@ function VoiceRecorder({ onSent }: { onSent: () => void }) {
       typeof navigator !== "undefined" && Boolean(navigator.mediaDevices) && typeof MediaRecorder !== "undefined"
     );
   }, []);
+
+  useEffect(() => {
+    onStageChange(stage);
+  }, [stage, onStageChange]);
 
   useEffect(() => {
     if (stage !== "recording") return;
@@ -295,6 +305,7 @@ export function LoveNoteCard({
   const [pinged, setPinged] = useState(false);
   const [voiceSent, setVoiceSent] = useState(false);
   const [text, setText] = useState("");
+  const [recorderStage, setRecorderStage] = useState<"idle" | "recording" | "preview">("idle");
 
   const send = (value: string) => {
     if (!value.trim() || pending) return;
@@ -330,27 +341,33 @@ export function LoveNoteCard({
         </p>
       )}
 
-      <div className="ss-moods" style={{ margin: "14px 0 10px" }}>
-        {QUICK.map((q) => (
-          <button key={q} type="button" className="ss-mood" disabled={pending} onClick={() => send(q)}>
-            {q} ♡
-          </button>
-        ))}
-      </div>
-      <div className="ss-inline">
-        <input
-          className="ss-input"
-          placeholder="Or write your own…"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") send(text);
-          }}
-        />
-        <button className="ss-btn tiny" type="button" disabled={pending} onClick={() => send(text)}>
-          Send
-        </button>
-        <VoiceRecorder onSent={() => setVoiceSent(true)} />
+      {recorderStage === "idle" && (
+        <div className="ss-moods" style={{ margin: "14px 0 10px" }}>
+          {QUICK.map((q) => (
+            <button key={q} type="button" className="ss-mood" disabled={pending} onClick={() => send(q)}>
+              {q} ♡
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="ss-inline" style={{ marginTop: recorderStage === "idle" ? 0 : 14 }}>
+        {recorderStage === "idle" && (
+          <>
+            <input
+              className="ss-input"
+              placeholder="Or write your own…"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") send(text);
+              }}
+            />
+            <button className="ss-btn tiny" type="button" disabled={pending} onClick={() => send(text)}>
+              Send
+            </button>
+          </>
+        )}
+        <VoiceRecorder key="voice-recorder" onSent={() => setVoiceSent(true)} onStageChange={setRecorderStage} />
       </div>
       {sent && (
         <p className="ss-muted" style={{ marginTop: 10 }}>
