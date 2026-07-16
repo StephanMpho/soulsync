@@ -24,7 +24,8 @@ export default async function HomePage() {
   const { supabase, userId, displayName, mood, coupleId, partner, unreadCount, unseenActivity } =
     await requireCoupleContext();
 
-  const [{ data: couple }, { data: pendingInvite }, { data: latestNote }, insight, memories] = await Promise.all([
+  const [{ data: couple }, { data: pendingInvite }, { data: latestNote }, { data: myLatestNote }, insight, memories] =
+    await Promise.all([
     supabase
       .from("couples")
       .select("met_date, anniversary")
@@ -49,14 +50,34 @@ export default async function HomePage() {
           .maybeSingle()
           .overrideTypes<LoveNote | null>()
       : Promise.resolve({ data: null as LoveNote | null }),
+    supabase
+      .from("love_notes")
+      .select("id, body, created_at, opened_at, audio_path, duration_seconds")
+      .eq("couple_id", coupleId)
+      .eq("from_id", userId)
+      .not("audio_path", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .overrideTypes<LoveNote | null>(),
     getCompanionInsight(supabase, coupleId),
     getOnThisDayMemories(supabase, coupleId),
   ]);
 
-  const audioUrl = latestNote?.audio_path
-    ? (await supabase.storage.from("voice-notes").createSignedUrl(latestNote.audio_path, 3600)).data
-        ?.signedUrl ?? null
-    : null;
+  const [audioUrl, myAudioUrl] = await Promise.all([
+    latestNote?.audio_path
+      ? supabase.storage
+          .from("voice-notes")
+          .createSignedUrl(latestNote.audio_path, 3600)
+          .then((r) => r.data?.signedUrl ?? null)
+      : Promise.resolve(null),
+    myLatestNote?.audio_path
+      ? supabase.storage
+          .from("voice-notes")
+          .createSignedUrl(myLatestNote.audio_path, 3600)
+          .then((r) => r.data?.signedUrl ?? null)
+      : Promise.resolve(null),
+  ]);
 
   return (
     <>
@@ -164,6 +185,19 @@ export default async function HomePage() {
                     openedAt: latestNote.opened_at,
                     audioUrl,
                     durationSeconds: latestNote.duration_seconds,
+                  }
+                : null
+            }
+            mine={
+              myLatestNote?.audio_path
+                ? {
+                    audioUrl: myAudioUrl,
+                    durationSeconds: myLatestNote.duration_seconds,
+                    when: new Date(myLatestNote.created_at).toLocaleDateString("en-ZA", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    }),
                   }
                 : null
             }

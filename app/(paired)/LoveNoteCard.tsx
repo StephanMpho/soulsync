@@ -267,6 +267,7 @@ function SealedNote({
 export function LoveNoteCard({
   partnerName,
   latest,
+  mine,
 }: {
   partnerName: string;
   latest: {
@@ -277,6 +278,7 @@ export function LoveNoteCard({
     audioUrl: string | null;
     durationSeconds: number | null;
   } | null;
+  mine: { audioUrl: string | null; durationSeconds: number | null; when: string } | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [sent, setSent] = useState(false);
@@ -349,6 +351,15 @@ export function LoveNoteCard({
         <p className="ss-muted" style={{ marginTop: 10 }}>
           Voice note sent ♡ — {partnerName} will hear it the moment they open the app.
         </p>
+      )}
+
+      {mine?.audioUrl && (
+        <div style={{ marginTop: 14 }}>
+          <div className="ss-muted" style={{ fontSize: 12, marginBottom: 8 }}>
+            The last voice note you sent, {mine.when}
+          </div>
+          <VoicePlayer src={mine.audioUrl} duration={mine.durationSeconds} />
+        </div>
       )}
 
       {latest && (
