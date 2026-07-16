@@ -172,6 +172,9 @@
 .ss-reaction.sel { border-color: #6D2E46; background: #6D2E460d; }
 .ss-reaction-count { font-family: 'Inter', sans-serif; font-size: 11px; color: #2D2D2D99; }
 
+.ss-voice-history-link { display: block; margin-top: 16px; font-size: 12.5px; font-weight: 500; color: #6D2E46; text-decoration: none; }
+.ss-voice-history-link:hover { text-decoration: underline; }
+
 .ss-voice-mic { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; background: #6D2E46; color: #FAF7F3; font-size: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: transform .15s; }
 .ss-voice-mic:hover { transform: scale(1.06); }
 .ss-voice-mic:focus-visible { outline: 2px solid #6D2E46; outline-offset: 2px; }
