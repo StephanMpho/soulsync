@@ -28,7 +28,10 @@ export default function LoginPage() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { display_name: displayName.trim() || undefined } },
+          options: {
+            data: { display_name: displayName.trim() || undefined },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
         if (signUpError) throw signUpError;
         if (!data.session) {
