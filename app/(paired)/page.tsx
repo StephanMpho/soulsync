@@ -8,6 +8,7 @@ import { NotificationBell } from "./NotificationBell";
 import { LoveNoteCard } from "./LoveNoteCard";
 import { PushSubscribeButton } from "./PushSubscribeButton";
 import { getCompanionInsight } from "@/lib/companion";
+import { getOnThisDayMemories } from "@/lib/memories";
 import { setMood } from "./actions";
 
 type LoveNote = { id: string; body: string; created_at: string; opened_at: string | null };
@@ -16,7 +17,7 @@ export default async function HomePage() {
   const { supabase, userId, displayName, mood, coupleId, partner, unreadCount, unseenActivity } =
     await requireCoupleContext();
 
-  const [{ data: couple }, { data: pendingInvite }, { data: latestNote }, insight] = await Promise.all([
+  const [{ data: couple }, { data: pendingInvite }, { data: latestNote }, insight, memories] = await Promise.all([
     supabase
       .from("couples")
       .select("met_date, anniversary")
@@ -42,6 +43,7 @@ export default async function HomePage() {
           .overrideTypes<LoveNote | null>()
       : Promise.resolve({ data: null as LoveNote | null }),
     getCompanionInsight(supabase, coupleId),
+    getOnThisDayMemories(supabase, coupleId),
   ]);
 
   return (
@@ -97,6 +99,23 @@ export default async function HomePage() {
           <div className="ss-kicker">From your companion</div>
           <p className="ss-insight-quote">{insight}</p>
         </section>
+
+        {memories.length > 0 && (
+          <section className="ss-card ss-rosecard col-12">
+            <div className="ss-kicker">On this day</div>
+            {memories.map((m) => (
+              <Link
+                key={`${m.type}-${m.id}`}
+                href={m.href}
+                className="ss-entry-text"
+                style={{ display: "block", marginTop: 10, textDecoration: "none", color: "inherit" }}
+              >
+                <b>{m.yearsAgo === 1 ? "1 year ago today" : `${m.yearsAgo} years ago today`}</b> —{" "}
+                &ldquo;{m.text}&rdquo;
+              </Link>
+            ))}
+          </section>
+        )}
 
         <section className="ss-card col-12">
           <div className="ss-kicker">How are you feeling, {displayName}?</div>
