@@ -31,3 +31,19 @@ export async function updateDates(formData: FormData) {
   revalidatePath("/us");
   revalidatePath("/");
 }
+
+export async function updatePronoun(formData: FormData) {
+  const pronoun = formData.get("pronoun");
+  if (pronoun !== "he" && pronoun !== "she" && pronoun !== "they") return;
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("profiles").update({ pronoun }).eq("id", user.id);
+  revalidatePath("/us");
+  revalidatePath("/");
+  revalidatePath("/garden");
+}

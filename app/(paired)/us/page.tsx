@@ -1,6 +1,7 @@
 import { requireCoupleContext } from "@/lib/session";
 import { RoomHeader } from "../RoomHeader";
 import { DatesForm } from "./DatesForm";
+import { PronounForm } from "./PronounForm";
 
 type Couple = { met_date: string | null; anniversary: string | null };
 type Invite = { answers: string[]; inviter_id: string | null };
@@ -8,7 +9,7 @@ type Invite = { answers: string[]; inviter_id: string | null };
 export default async function UsPage() {
   const { supabase, coupleId, userId, displayName, partner, unreadCount } = await requireCoupleContext();
 
-  const [{ data: couple }, { data: invitation }] = await Promise.all([
+  const [{ data: couple }, { data: invitation }, { data: myProfile }] = await Promise.all([
     supabase
       .from("couples")
       .select("met_date, anniversary")
@@ -22,6 +23,12 @@ export default async function UsPage() {
       .eq("status", "accepted")
       .maybeSingle()
       .overrideTypes<Invite | null>(),
+    supabase
+      .from("profiles")
+      .select("pronoun")
+      .eq("id", userId)
+      .single()
+      .overrideTypes<{ pronoun: string | null }>(),
   ]);
 
   const inviterName = invitation
@@ -49,6 +56,10 @@ export default async function UsPage() {
       </section>
 
       <DatesForm metDate={couple?.met_date ?? null} anniversary={couple?.anniversary ?? null} />
+
+      <div className="ss-grid" style={{ marginTop: 14 }}>
+        <PronounForm displayName={displayName} pronoun={myProfile?.pronoun ?? null} />
+      </div>
 
       {invitation && (
         <div className="ss-grid" style={{ marginTop: 14 }}>

@@ -11,6 +11,7 @@ import { PushSubscribeButton } from "./PushSubscribeButton";
 import { getCompanionInsight } from "@/lib/companion";
 import { getOnThisDayMemories } from "@/lib/memories";
 import { getPromptForDate } from "@/lib/dailyPrompts";
+import { fillPronouns } from "@/lib/pronouns";
 import { computeStreakState, type CompletionRow } from "@/lib/streak";
 import { DailyPromptCard } from "./DailyPromptCard";
 import { setMood } from "./actions";
@@ -122,7 +123,7 @@ export default async function HomePage() {
     : { data: null as CompletionRow[] | null };
 
   const streakState = partner ? computeStreakState(completionRows ?? [], userId, partner.id) : null;
-  const todaysPrompt = getPromptForDate(new Date());
+  const todaysPrompt = fillPronouns(getPromptForDate(new Date()), partner?.pronoun ?? null);
 
   const [textView, voiceView, myVoiceUrl] = await Promise.all([
     toNoteView(supabase, latestTextNote),

@@ -27,9 +27,9 @@ export async function requireCoupleContext() {
 
   const { data: members } = await supabase
     .from("profiles")
-    .select("id, display_name")
+    .select("id, display_name, pronoun")
     .eq("couple_id", profile.couple_id)
-    .overrideTypes<{ id: string; display_name: string }[]>();
+    .overrideTypes<{ id: string; display_name: string; pronoun: "he" | "she" | "they" | null }[]>();
 
   const partner = members?.find((m) => m.id !== user.id) ?? null;
 
