@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 export function PhotoPicker({ name = "photo" }: { name?: string }) {
+  const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -20,6 +21,10 @@ export function PhotoPicker({ name = "photo" }: { name?: string }) {
 
   return (
     <div className="ss-photo-picker">
+      {/* Stays mounted regardless of preview state — swapping it out for
+          the preview div (the previous bug) meant the selected file never
+          made it into the form's data at submit time. */}
+      <input ref={inputRef} id={inputId} type="file" name={name} accept="image/*" onChange={onChange} hidden />
       {previewUrl ? (
         <div className="ss-photo-preview-wrap">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -29,9 +34,8 @@ export function PhotoPicker({ name = "photo" }: { name?: string }) {
           </button>
         </div>
       ) : (
-        <label className="ss-photo-add">
+        <label htmlFor={inputId} className="ss-photo-add">
           📷 Add a photo (optional)
-          <input ref={inputRef} type="file" name={name} accept="image/*" onChange={onChange} hidden />
         </label>
       )}
     </div>
