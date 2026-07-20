@@ -208,6 +208,16 @@
 }
 @media (prefers-reduced-motion: reduce) { .ss-hb-heart.pulse { animation: none; } }
 
+.ss-photo-picker { margin-top: 10px; }
+.ss-photo-add { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; color: #6D2E46; border: 1px dashed #D6B37088; border-radius: 999px; padding: 8px 16px; }
+.ss-photo-add:hover { border-color: #6D2E4666; }
+.ss-photo-preview-wrap { position: relative; width: 100%; max-width: 220px; }
+.ss-photo-preview { display: block; width: 100%; max-height: 180px; object-fit: cover; border-radius: 12px; }
+.ss-photo-remove { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: none; cursor: pointer; background: #2D2D2Dcc; color: #FAF7F3; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+
+.ss-entry-photo { display: block; width: 100%; max-height: 320px; object-fit: cover; border-radius: 14px; margin-top: 10px; }
+.ss-tl-photo { display: block; width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; margin-top: 8px; }
+
 .ss-stars { position: relative; height: 100px; width: 100%; max-width: 360px; margin: 0 auto 24px; }
 .star { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: #D6B370; box-shadow: 0 0 24px 6px #D6B37066; }
 .star.a { left: 8%; animation: driftA 2.4s cubic-bezier(.22,.61,.36,1) forwards; }

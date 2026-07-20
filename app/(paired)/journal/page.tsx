@@ -2,8 +2,16 @@ import { requireCoupleContext } from "@/lib/session";
 import { RoomHeader } from "../RoomHeader";
 import { JournalForm } from "./JournalForm";
 import { ReactionBar, type Reaction } from "../ReactionBar";
+import { getPhotoUrls } from "@/lib/photos";
 
-type Entry = { id: string; kind: string; body: string; author_id: string; created_at: string };
+type Entry = {
+  id: string;
+  kind: string;
+  body: string;
+  author_id: string;
+  created_at: string;
+  photo_path: string | null;
+};
 type ReactionRow = { entry_id: string; emoji: string; user_id: string };
 
 function capitalize(s: string) {
@@ -16,7 +24,7 @@ export default async function JournalPage() {
   const [{ data: entries }, { data: reactions }] = await Promise.all([
     supabase
       .from("journal_entries")
-      .select("id, kind, body, author_id, created_at")
+      .select("id, kind, body, author_id, created_at, photo_path")
       .eq("couple_id", coupleId)
       .order("created_at", { ascending: false })
       .overrideTypes<Entry[]>(),
@@ -27,6 +35,11 @@ export default async function JournalPage() {
       .eq("entry_type", "journal")
       .overrideTypes<ReactionRow[]>(),
   ]);
+
+  const photoUrls = await getPhotoUrls(
+    supabase,
+    (entries ?? []).map((e) => e.photo_path).filter((p): p is string => Boolean(p))
+  );
 
   const reactionsFor = (entryId: string): Reaction[] =>
     (reactions ?? []).filter((r) => r.entry_id === entryId).map((r) => ({ emoji: r.emoji, user_id: r.user_id }));
@@ -72,6 +85,10 @@ export default async function JournalPage() {
                   year: "numeric",
                 })}
               </div>
+              {e.photo_path && photoUrls.get(e.photo_path) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrls.get(e.photo_path)} alt="" className="ss-entry-photo" />
+              )}
               <p className="ss-entry-text">{e.body}</p>
               <ReactionBar entryType="journal" entryId={e.id} userId={userId} reactions={reactionsFor(e.id)} />
             </div>

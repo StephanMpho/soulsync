@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { addTimelineEvent } from "./actions";
+import { PhotoPicker } from "../PhotoPicker";
+import { compressImage } from "../compressImage";
 
 export function TimelineForm() {
   const [open, setOpen] = useState(false);
@@ -23,6 +25,10 @@ export function TimelineForm() {
       action={(formData) => {
         formData.set("future", String(future));
         startTransition(async () => {
+          const photo = formData.get("photo");
+          if (photo instanceof File && photo.size > 0) {
+            formData.set("photo", await compressImage(photo), "photo.jpg");
+          }
           await addTimelineEvent(formData);
           setOpen(false);
           setFuture(false);
@@ -45,7 +51,8 @@ export function TimelineForm() {
         required
       />
       <input className="ss-input" name="note" placeholder="A line to remember it by (optional)" />
-      <div style={{ display: "flex", gap: 8 }}>
+      <PhotoPicker />
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button className="ss-btn solid" type="submit" disabled={pending}>
           {pending ? "Saving…" : "Place it on the timeline"}
         </button>

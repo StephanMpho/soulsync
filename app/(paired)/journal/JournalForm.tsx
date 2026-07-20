@@ -2,6 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { addJournalEntry } from "./actions";
+import { PhotoPicker } from "../PhotoPicker";
+import { compressImage } from "../compressImage";
 
 const KINDS = ["reflection", "gratitude", "letter"] as const;
 const LABELS: Record<string, string> = {
@@ -13,6 +15,7 @@ const LABELS: Record<string, string> = {
 export function JournalForm({ partnerName }: { partnerName: string | null }) {
   const [kind, setKind] = useState<string>("reflection");
   const [pending, startTransition] = useTransition();
+  const [photoKey, setPhotoKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
 
   const placeholder =
@@ -42,13 +45,19 @@ export function JournalForm({ partnerName }: { partnerName: string | null }) {
         action={(formData) => {
           formData.set("kind", kind);
           startTransition(async () => {
+            const photo = formData.get("photo");
+            if (photo instanceof File && photo.size > 0) {
+              formData.set("photo", await compressImage(photo), "photo.jpg");
+            }
             await addJournalEntry(formData);
             formRef.current?.reset();
+            setPhotoKey((k) => k + 1);
           });
         }}
       >
         <textarea className="ss-input" name="body" rows={5} placeholder={placeholder} required />
-        <button className="ss-btn solid" type="submit" disabled={pending}>
+        <PhotoPicker key={photoKey} />
+        <button className="ss-btn solid" type="submit" disabled={pending} style={{ marginTop: 12 }}>
           {pending ? "Saving…" : "Add to your story"}
         </button>
       </form>

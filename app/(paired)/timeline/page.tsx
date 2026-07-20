@@ -2,6 +2,7 @@ import { requireCoupleContext } from "@/lib/session";
 import { RoomHeader } from "../RoomHeader";
 import { TimelineForm } from "./TimelineForm";
 import { ReactionBar, type Reaction } from "../ReactionBar";
+import { getPhotoUrls } from "@/lib/photos";
 
 function formatWhen(eventDate: string | null) {
   if (!eventDate) return "Someday";
@@ -23,6 +24,7 @@ type TimelineEvent = {
   kind: string;
   is_past: boolean;
   event_date: string | null;
+  photo_path: string | null;
 };
 type ReactionRow = { entry_id: string; emoji: string; user_id: string };
 
@@ -32,7 +34,7 @@ export default async function TimelinePage() {
   const [{ data: events }, { data: reactions }] = await Promise.all([
     supabase
       .from("timeline_events")
-      .select("id, title, note, kind, is_past, event_date")
+      .select("id, title, note, kind, is_past, event_date, photo_path")
       .eq("couple_id", coupleId)
       .order("created_at", { ascending: false })
       .overrideTypes<TimelineEvent[]>(),
@@ -43,6 +45,11 @@ export default async function TimelinePage() {
       .eq("entry_type", "timeline")
       .overrideTypes<ReactionRow[]>(),
   ]);
+
+  const photoUrls = await getPhotoUrls(
+    supabase,
+    (events ?? []).map((e) => e.photo_path).filter((p): p is string => Boolean(p))
+  );
 
   const reactionsFor = (entryId: string): Reaction[] =>
     (reactions ?? []).filter((r) => r.entry_id === entryId).map((r) => ({ emoji: r.emoji, user_id: r.user_id }));
@@ -79,6 +86,10 @@ export default async function TimelinePage() {
                 </span>
               </div>
               <h3>{t.title}</h3>
+              {t.photo_path && photoUrls.get(t.photo_path) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrls.get(t.photo_path)} alt="" className="ss-tl-photo" />
+              )}
               {t.note && <p className="ss-muted">{t.note}</p>}
               <ReactionBar entryType="timeline" entryId={t.id} userId={userId} reactions={reactionsFor(t.id)} />
             </div>
