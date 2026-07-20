@@ -10,6 +10,9 @@ import { LoveNoteCard } from "./LoveNoteCard";
 import { PushSubscribeButton } from "./PushSubscribeButton";
 import { getCompanionInsight } from "@/lib/companion";
 import { getOnThisDayMemories } from "@/lib/memories";
+import { getPromptForDate } from "@/lib/dailyPrompts";
+import { computeStreakState, type CompletionRow } from "@/lib/streak";
+import { DailyPromptCard } from "./DailyPromptCard";
 import { setMood } from "./actions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -110,6 +113,17 @@ export default async function HomePage() {
     getOnThisDayMemories(supabase, coupleId),
   ]);
 
+  const { data: completionRows } = partner
+    ? await supabase
+        .from("daily_completions")
+        .select("date, user_id")
+        .eq("couple_id", coupleId)
+        .overrideTypes<CompletionRow[]>()
+    : { data: null as CompletionRow[] | null };
+
+  const streakState = partner ? computeStreakState(completionRows ?? [], userId, partner.id) : null;
+  const todaysPrompt = getPromptForDate(new Date());
+
   const [textView, voiceView, myVoiceUrl] = await Promise.all([
     toNoteView(supabase, latestTextNote),
     toNoteView(supabase, latestVoiceNote),
@@ -186,6 +200,17 @@ export default async function HomePage() {
           <div className="ss-kicker">From your companion</div>
           <p className="ss-insight-quote">{insight}</p>
         </section>
+
+        {partner && streakState && (
+          <DailyPromptCard
+            prompt={todaysPrompt}
+            partnerName={partner.display_name}
+            streak={streakState.streak}
+            gardenCount={streakState.gardenCount}
+            myDoneToday={streakState.myDoneToday}
+            partnerDoneToday={streakState.partnerDoneToday}
+          />
+        )}
 
         {memories.length > 0 && (
           <section className="ss-card ss-rosecard col-12">

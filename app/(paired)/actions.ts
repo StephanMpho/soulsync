@@ -118,6 +118,64 @@ export async function openLoveNote(noteId: string) {
   revalidatePath("/");
 }
 
+export async function completeDailyPrompt() {
+  const actor = await getActor();
+  if (!actor) return;
+  const { supabase, userId, displayName, coupleId } = actor;
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  await supabase
+    .from("daily_completions")
+    .upsert({ couple_id: coupleId, date: today, user_id: userId }, { onConflict: "couple_id,date,user_id" });
+
+  const { data: partnerProfile } = await supabase
+    .from("profiles")
+    .select("id, display_name")
+    .eq("couple_id", coupleId)
+    .neq("id", userId)
+    .maybeSingle<{ id: string; display_name: string }>();
+
+  if (!partnerProfile) {
+    revalidatePath("/");
+    return;
+  }
+
+  const { data: todayRows } = await supabase
+    .from("daily_completions")
+    .select("user_id")
+    .eq("couple_id", coupleId)
+    .eq("date", today)
+    .overrideTypes<{ user_id: string }[]>();
+
+  const partnerDoneToday = (todayRows ?? []).some((r) => r.user_id === partnerProfile.id);
+
+  if (partnerDoneToday) {
+    await logActivity(
+      supabase,
+      coupleId,
+      userId,
+      "streak",
+      `${displayName} and ${partnerProfile.display_name} both did today's shared moment ♡ — the garden grows`
+    );
+    await notifyPartner(supabase, coupleId, userId, "streak_both", {
+      title: "Today's moment, complete ♡",
+      body: "You both showed up today — one more flower in your garden.",
+      url: "/garden",
+    });
+  } else {
+    await logActivity(supabase, coupleId, userId, "streak", `${displayName} completed today's shared moment`);
+    await notifyPartner(supabase, coupleId, userId, "streak_nudge", {
+      title: `${displayName} did today's moment ♡`,
+      body: "Your turn — takes 30 seconds.",
+      url: "/",
+    });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/garden");
+}
+
 export async function subscribeToPush(subscriptionJson: string) {
   const parsed = JSON.parse(subscriptionJson) as { endpoint: string; keys: { p256dh: string; auth: string } };
 

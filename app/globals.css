@@ -218,6 +218,8 @@
 .ss-entry-photo { display: block; width: 100%; max-height: 320px; object-fit: cover; border-radius: 14px; margin-top: 10px; }
 .ss-tl-photo { display: block; width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; margin-top: 8px; }
 
+.ss-garden-grid { display: flex; flex-wrap: wrap; gap: 6px; font-size: 26px; line-height: 1; }
+
 .ss-stars { position: relative; height: 100px; width: 100%; max-width: 360px; margin: 0 auto 24px; }
 .star { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: #D6B370; box-shadow: 0 0 24px 6px #D6B37066; }
 .star.a { left: 8%; animation: driftA 2.4s cubic-bezier(.22,.61,.36,1) forwards; }

@@ -19,6 +19,8 @@ const RESTRAINT: Record<string, Restraint> = {
   mood: "none",
   fund: "none",
   capsule_sealed: "none",
+  streak_both: "immediate",
+  streak_nudge: "immediate",
 };
 
 // Every batched type (memory/journal/goal) shares one hourly window per

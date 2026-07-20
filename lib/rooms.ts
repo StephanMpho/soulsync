@@ -16,6 +16,9 @@ export const ROOMS = [
   { name: "Travel", href: "/travel", desc: "The packing list for your next trip together.", icon: "✈" },
   { name: "Us", href: "/us", desc: "Your dates, your invitation, and the keys to this home.", icon: "❦" },
   { name: "Voice notes", href: "/voice-notes", desc: "Every voice note you've sent each other, in one place.", icon: "🎙" },
+  { name: "Garden", href: "/garden", desc: "One flower for every day you both showed up together.", icon: "🌸" },
 ] as const;
 
-export const MORE_ROOMS = ROOMS.filter((r) => ["Capsules", "Finance", "Travel", "Us", "Voice notes"].includes(r.name));
+export const MORE_ROOMS = ROOMS.filter((r) =>
+  ["Capsules", "Finance", "Travel", "Us", "Voice notes", "Garden"].includes(r.name)
+);
