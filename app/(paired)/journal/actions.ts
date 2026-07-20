@@ -10,13 +10,15 @@ export async function addJournalEntry(formData: FormData) {
   const kind = formData.get("kind");
   const body = formData.get("body");
   const photo = formData.get("photo");
-  if (typeof kind !== "string" || typeof body !== "string" || !body.trim()) return;
+  if (typeof kind !== "string" || typeof body !== "string" || !body.trim()) return { photoFailed: false };
 
   const actor = await getActor();
-  if (!actor) return;
+  if (!actor) return { photoFailed: false };
   const { supabase, userId, displayName, coupleId } = actor;
 
-  const photoPath = photo instanceof File && photo.size > 0 ? await uploadPhoto(supabase, coupleId, photo) : null;
+  const hadPhoto = photo instanceof File && photo.size > 0;
+  const photoPath = hadPhoto ? await uploadPhoto(supabase, coupleId, photo) : null;
+  const photoFailed = hadPhoto && !photoPath;
 
   await supabase.from("journal_entries").insert({
     couple_id: coupleId,
@@ -31,4 +33,5 @@ export async function addJournalEntry(formData: FormData) {
   await notifyPartner(supabase, coupleId, userId, "journal", { title: "A new journal entry", body: text, url: "/journal" });
 
   revalidatePath("/journal");
+  return { photoFailed };
 }

@@ -11,14 +11,16 @@ export async function addTimelineEvent(formData: FormData) {
   const note = formData.get("note");
   const future = formData.get("future") === "true";
   const photo = formData.get("photo");
-  if (typeof title !== "string" || !title.trim()) return;
+  if (typeof title !== "string" || !title.trim()) return { photoFailed: false };
 
   const actor = await getActor();
-  if (!actor) return;
+  if (!actor) return { photoFailed: false };
   const { supabase, userId, displayName, coupleId } = actor;
 
   const noteText = typeof note === "string" && note.trim() ? `${note.trim()} — ${displayName}` : null;
-  const photoPath = photo instanceof File && photo.size > 0 ? await uploadPhoto(supabase, coupleId, photo) : null;
+  const hadPhoto = photo instanceof File && photo.size > 0;
+  const photoPath = hadPhoto ? await uploadPhoto(supabase, coupleId, photo) : null;
+  const photoFailed = hadPhoto && !photoPath;
 
   await supabase.from("timeline_events").insert({
     couple_id: coupleId,
@@ -36,4 +38,5 @@ export async function addTimelineEvent(formData: FormData) {
   await notifyPartner(supabase, coupleId, userId, "memory", { title: "A new memory", body: text, url: "/timeline" });
 
   revalidatePath("/timeline");
+  return { photoFailed };
 }

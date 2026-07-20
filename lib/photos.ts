@@ -6,7 +6,11 @@ export async function uploadPhoto(supabase: SupabaseClient, coupleId: string, fi
   const path = `${coupleId}/${crypto.randomUUID()}.jpg`;
   const bytes = new Uint8Array(await file.arrayBuffer());
   const { error } = await supabase.storage.from("photos").upload(path, bytes, { contentType: "image/jpeg" });
-  return error ? null : path;
+  if (error) {
+    console.error("Photo upload failed:", error.message, { path, size: file.size, type: file.type });
+    return null;
+  }
+  return path;
 }
 
 // Batch-signs every photo path a page needs in one round trip, rather than

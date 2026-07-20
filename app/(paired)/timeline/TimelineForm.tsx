@@ -8,13 +8,21 @@ import { compressImage } from "../compressImage";
 export function TimelineForm() {
   const [open, setOpen] = useState(false);
   const [future, setFuture] = useState(false);
+  const [photoWarning, setPhotoWarning] = useState(false);
   const [pending, startTransition] = useTransition();
 
   if (!open) {
     return (
-      <button className="ss-btn solid" onClick={() => setOpen(true)}>
-        ＋ Add a memory or dream
-      </button>
+      <>
+        <button className="ss-btn solid" onClick={() => setOpen(true)}>
+          ＋ Add a memory or dream
+        </button>
+        {photoWarning && (
+          <p className="ss-muted" style={{ marginTop: 8 }}>
+            Saved, but the photo couldn&apos;t attach — try adding it again.
+          </p>
+        )}
+      </>
     );
   }
 
@@ -29,7 +37,8 @@ export function TimelineForm() {
           if (photo instanceof File && photo.size > 0) {
             formData.set("photo", await compressImage(photo), "photo.jpg");
           }
-          await addTimelineEvent(formData);
+          const result = await addTimelineEvent(formData);
+          setPhotoWarning(Boolean(result?.photoFailed));
           setOpen(false);
           setFuture(false);
         });
