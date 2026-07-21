@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { notifyPartner } from "@/lib/notify";
+import { notifyPartner, NOTIFICATION_TYPES } from "@/lib/notify";
+
+// A relative, in-app path only — blocks the payload's url from sending a
+// partner's push notification to an attacker-controlled external site.
+function isSafeRelativeUrl(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//");
+}
 
 // Same restraint-rule dispatch every mutation's server action already calls
 // directly — exposed as its own route per the blueprint's route list, for
 // any future client that fires an activity outside this app's own actions.
 export async function POST(request: Request) {
   const { type, title, body, url } = await request.json();
-  if (typeof type !== "string" || typeof title !== "string" || typeof body !== "string") {
+  if (
+    typeof type !== "string" ||
+    !(NOTIFICATION_TYPES as readonly string[]).includes(type) ||
+    typeof title !== "string" ||
+    typeof body !== "string" ||
+    (url !== undefined && !isSafeRelativeUrl(url))
+  ) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 

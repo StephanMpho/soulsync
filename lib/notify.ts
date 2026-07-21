@@ -8,6 +8,21 @@ import { sendPushToUser, type PushPayload } from "@/lib/push";
 // "none" (in-app feed only) rather than guessed into a category.
 type Restraint = "immediate" | "batched" | "none";
 
+export const NOTIFICATION_TYPES = [
+  "note",
+  "ping",
+  "capsule_opened",
+  "memory",
+  "journal",
+  "goal",
+  "habit",
+  "mood",
+  "fund",
+  "capsule_sealed",
+  "streak_both",
+  "streak_nudge",
+] as const;
+
 const RESTRAINT: Record<string, Restraint> = {
   note: "immediate",
   ping: "immediate",
