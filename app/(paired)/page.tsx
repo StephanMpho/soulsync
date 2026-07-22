@@ -117,7 +117,7 @@ export default async function HomePage() {
   const { data: completionRows } = partner
     ? await supabase
         .from("daily_completions")
-        .select("date, user_id")
+        .select("date, user_id, note")
         .eq("couple_id", coupleId)
         .overrideTypes<CompletionRow[]>()
     : { data: null as CompletionRow[] | null };
@@ -210,6 +210,7 @@ export default async function HomePage() {
             gardenCount={streakState.gardenCount}
             myDoneToday={streakState.myDoneToday}
             partnerDoneToday={streakState.partnerDoneToday}
+            partnerNoteToday={streakState.partnerNoteToday}
           />
         )}
 

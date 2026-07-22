@@ -1,10 +1,11 @@
-export type CompletionRow = { date: string; user_id: string };
+export type CompletionRow = { date: string; user_id: string; note?: string | null };
 
 export type StreakState = {
   streak: number;
   gardenCount: number;
   myDoneToday: boolean;
   partnerDoneToday: boolean;
+  partnerNoteToday: string | null;
 };
 
 // A day counts toward the streak/garden only once both partners have a
@@ -24,6 +25,7 @@ export function computeStreakState(rows: CompletionRow[], userId: string, partne
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
   const todayUsers = byDate.get(todayStr) ?? new Set<string>();
+  const partnerNoteToday = rows.find((r) => r.date === todayStr && r.user_id === partnerId)?.note ?? null;
 
   // If today isn't complete yet, count the streak up through yesterday so
   // an in-progress streak doesn't look broken before the day is even over.
@@ -41,5 +43,6 @@ export function computeStreakState(rows: CompletionRow[], userId: string, partne
     gardenCount: bothDates.size,
     myDoneToday: todayUsers.has(userId),
     partnerDoneToday: todayUsers.has(partnerId),
+    partnerNoteToday,
   };
 }

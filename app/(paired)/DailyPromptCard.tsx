@@ -11,6 +11,7 @@ export function DailyPromptCard({
   gardenCount,
   myDoneToday,
   partnerDoneToday,
+  partnerNoteToday,
 }: {
   prompt: string;
   partnerName: string;
@@ -18,14 +19,16 @@ export function DailyPromptCard({
   gardenCount: number;
   myDoneToday: boolean;
   partnerDoneToday: boolean;
+  partnerNoteToday: string | null;
 }) {
   const [done, setDone] = useState(myDoneToday);
+  const [note, setNote] = useState("");
   const [pending, startTransition] = useTransition();
 
   const complete = () => {
     if (done || pending) return;
     setDone(true);
-    startTransition(() => completeDailyPrompt());
+    startTransition(() => completeDailyPrompt(note));
   };
 
   return (
@@ -35,6 +38,12 @@ export function DailyPromptCard({
         {prompt}
       </p>
 
+      {partnerDoneToday && partnerNoteToday && (
+        <p className="ss-muted" style={{ margin: "0 0 12px", fontStyle: "italic" }}>
+          {partnerName}: &ldquo;{partnerNoteToday}&rdquo;
+        </p>
+      )}
+
       {done ? (
         <p className="ss-muted" style={{ margin: 0 }}>
           {partnerDoneToday || partnerName === ""
@@ -43,10 +52,18 @@ export function DailyPromptCard({
         </p>
       ) : (
         <>
+          <textarea
+            className="ss-input"
+            rows={2}
+            placeholder={`Say what you did or told ${partnerName || "them"} (optional)`}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            style={{ marginBottom: 10 }}
+          />
           <button type="button" className="ss-btn solid" disabled={pending} onClick={complete}>
             {pending ? "Saving…" : "I did this ♡"}
           </button>
-          {partnerDoneToday && (
+          {partnerDoneToday && !partnerNoteToday && (
             <p className="ss-muted" style={{ margin: "8px 0 0" }}>
               {partnerName} already did — your turn.
             </p>

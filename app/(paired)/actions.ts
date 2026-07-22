@@ -118,16 +118,20 @@ export async function openLoveNote(noteId: string) {
   revalidatePath("/");
 }
 
-export async function completeDailyPrompt() {
+export async function completeDailyPrompt(note?: string) {
   const actor = await getActor();
   if (!actor) return;
   const { supabase, userId, displayName, coupleId } = actor;
 
   const today = new Date().toISOString().slice(0, 10);
+  const trimmedNote = note?.trim() || null;
 
   await supabase
     .from("daily_completions")
-    .upsert({ couple_id: coupleId, date: today, user_id: userId }, { onConflict: "couple_id,date,user_id" });
+    .upsert(
+      { couple_id: coupleId, date: today, user_id: userId, note: trimmedNote },
+      { onConflict: "couple_id,date,user_id" }
+    );
 
   const { data: partnerProfile } = await supabase
     .from("profiles")
@@ -160,14 +164,14 @@ export async function completeDailyPrompt() {
     );
     await notifyPartner(supabase, coupleId, userId, "streak_both", {
       title: "Today's moment, complete ♡",
-      body: "You both showed up today — one more flower in your garden.",
+      body: trimmedNote ? `${displayName}: "${trimmedNote}"` : "You both showed up today — one more flower in your garden.",
       url: "/garden",
     });
   } else {
     await logActivity(supabase, coupleId, userId, "streak", `${displayName} completed today's shared moment`);
     await notifyPartner(supabase, coupleId, userId, "streak_nudge", {
       title: `${displayName} did today's moment ♡`,
-      body: "Your turn — takes 30 seconds.",
+      body: trimmedNote ? `"${trimmedNote}" — your turn now.` : "Your turn — takes 30 seconds.",
       url: "/",
     });
   }
