@@ -21,6 +21,7 @@ export const NOTIFICATION_TYPES = [
   "capsule_sealed",
   "streak_both",
   "streak_nudge",
+  "movie_night",
 ] as const;
 
 const RESTRAINT: Record<string, Restraint> = {
@@ -36,6 +37,7 @@ const RESTRAINT: Record<string, Restraint> = {
   capsule_sealed: "none",
   streak_both: "immediate",
   streak_nudge: "immediate",
+  movie_night: "immediate",
 };
 
 // Every batched type (memory/journal/goal) shares one hourly window per
