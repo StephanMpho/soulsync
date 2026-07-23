@@ -63,20 +63,29 @@ export async function scheduleMovieNight(formData: FormData) {
 
 // started_at is set a few seconds in the future — both screens count down
 // to the same shared moment rather than each starting their own local
-// timer, which is what actually keeps the ritual in sync.
+// timer, which is what actually keeps the ritual in sync. 7s (not 4s)
+// because the round trip for the clicking user's OWN screen to hear this
+// back over realtime can itself eat 1-3s, otherwise leaving barely any
+// visible countdown by the time it arrives. The action also returns
+// startedAt directly so the caller can apply it optimistically instead of
+// waiting on that same round trip.
 export async function startMovieNightCountdown(movieNightId: string) {
   const actor = await getActor();
-  if (!actor) return;
+  if (!actor) return { ok: false as const };
   const { supabase } = actor;
 
-  const startedAt = new Date(Date.now() + 4000).toISOString();
+  const startedAt = new Date(Date.now() + 7000).toISOString();
   const { error } = await supabase
     .from("movie_nights")
     .update({ status: "live", started_at: startedAt })
     .eq("id", movieNightId);
-  if (error) console.error("[startMovieNightCountdown] update failed:", error.message);
+  if (error) {
+    console.error("[startMovieNightCountdown] update failed:", error.message);
+    return { ok: false as const };
+  }
 
   revalidatePath("/movie-night");
+  return { ok: true as const, startedAt };
 }
 
 export async function endMovieNight(movieNightId: string) {

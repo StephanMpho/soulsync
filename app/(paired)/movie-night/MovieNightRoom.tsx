@@ -231,7 +231,19 @@ export function MovieNightRoom({
           className="ss-mn-btn"
           type="button"
           disabled={pending}
-          onClick={() => startTransition(() => startMovieNightCountdown(movieNight.id))}
+          onClick={() => {
+            const id = movieNight.id;
+            startTransition(async () => {
+              const result = await startMovieNightCountdown(id);
+              // Applied locally right away rather than waiting for the
+              // realtime round trip — that round trip alone can eat 1-3s,
+              // which otherwise left almost no visible countdown for the
+              // person who actually clicked.
+              if (result?.ok) {
+                setMovieNight((mn) => (mn ? { ...mn, status: "live", started_at: result.startedAt } : mn));
+              }
+            });
+          }}
         >
           Step 2 — we&apos;re both ready, start the countdown
         </button>
