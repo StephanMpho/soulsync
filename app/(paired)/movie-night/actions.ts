@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getActor } from "@/lib/actor";
 import { logActivity } from "@/lib/activity";
 import { notifyPartner } from "@/lib/notify";
+import { addTimelineEvent } from "../timeline/actions";
 
 // Only http(s) — blocks javascript:/data: URIs from ending up in an <a
 // href> that either partner might click.
@@ -99,13 +100,41 @@ export async function endMovieNight(movieNightId: string) {
   revalidatePath("/movie-night");
 }
 
+// For scheduled-but-not-yet-started movie nights only — a real "never
+// mind, we're not doing this" cancellation. Ended movie nights are never
+// deleted; they stay as permanent history in "Past movie nights".
 export async function cancelMovieNight(movieNightId: string) {
   const actor = await getActor();
   if (!actor) return;
   const { supabase } = actor;
 
-  const { error } = await supabase.from("movie_nights").delete().eq("id", movieNightId);
+  const { error } = await supabase
+    .from("movie_nights")
+    .delete()
+    .eq("id", movieNightId)
+    .eq("status", "scheduled");
   if (error) console.error("[cancelMovieNight] delete failed:", error.message);
 
   revalidatePath("/movie-night");
+}
+
+export async function logMovieNightToTimeline(movieNightId: string, title: string, service: string) {
+  const actor = await getActor();
+  if (!actor) return { ok: false };
+  const { supabase } = actor;
+
+  const formData = new FormData();
+  formData.set("title", title);
+  formData.set("note", `Watched together via ${service} ✦`);
+  formData.set("future", "false");
+  await addTimelineEvent(formData);
+
+  const { error } = await supabase
+    .from("movie_nights")
+    .update({ logged_at: new Date().toISOString() })
+    .eq("id", movieNightId);
+  if (error) console.error("[logMovieNightToTimeline] update failed:", error.message);
+
+  revalidatePath("/movie-night");
+  return { ok: true };
 }

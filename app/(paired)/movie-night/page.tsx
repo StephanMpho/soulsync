@@ -11,19 +11,21 @@ type MovieNight = {
   started_at: string | null;
   created_by: string;
   url: string | null;
+  logged_at: string | null;
 };
 
 export default async function MovieNightPage() {
   const { supabase, coupleId, userId, displayName, partner, unreadCount } = await requireCoupleContext();
 
-  const { data: current } = await supabase
+  // Every movie night for the couple — scheduled, live, and ended — so
+  // several can be scheduled at once and past ones stay as real history
+  // instead of only ever showing a single "current" one.
+  const { data: movieNights } = await supabase
     .from("movie_nights")
-    .select("id, title, service, scheduled_at, status, started_at, created_by, url")
+    .select("id, title, service, scheduled_at, status, started_at, created_by, url, logged_at")
     .eq("couple_id", coupleId)
-    .in("status", ["scheduled", "live"])
-    .order("scheduled_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<MovieNight>();
+    .order("created_at", { ascending: false })
+    .overrideTypes<MovieNight[]>();
 
   return (
     <>
@@ -52,7 +54,7 @@ export default async function MovieNightPage() {
           userId={userId}
           displayName={displayName}
           partnerName={partner.display_name}
-          initial={current ?? null}
+          initial={movieNights ?? []}
         />
       ) : (
         <div className="ss-card">
