@@ -37,17 +37,21 @@ export async function scheduleMovieNight(formData: FormData) {
   const serviceValue = typeof service === "string" && service.trim() ? service.trim() : "Other";
   const urlValue = isSafeExternalUrl(url) ? url.trim() : null;
 
-  const { error: insertError } = await supabase.from("movie_nights").insert({
-    couple_id: coupleId,
-    title: title.trim(),
-    service: serviceValue,
-    scheduled_at: scheduledAtIso,
-    url: urlValue,
-    created_by: userId,
-  });
+  const { data: inserted, error: insertError } = await supabase
+    .from("movie_nights")
+    .insert({
+      couple_id: coupleId,
+      title: title.trim(),
+      service: serviceValue,
+      scheduled_at: scheduledAtIso,
+      url: urlValue,
+      created_by: userId,
+    })
+    .select("id, title, service, scheduled_at, status, started_at, created_by, url, logged_at")
+    .single();
   if (insertError) {
     console.error("[scheduleMovieNight] insert failed:", insertError.message, insertError.details, insertError.hint);
-    return { ok: false };
+    return { ok: false as const };
   }
 
   const text = `${displayName} scheduled Movie Night: "${title.trim()}"`;
@@ -59,23 +63,24 @@ export async function scheduleMovieNight(formData: FormData) {
   });
 
   revalidatePath("/movie-night");
-  return { ok: true };
+  return { ok: true as const, movieNight: inserted };
 }
 
-// started_at is set a few seconds in the future — both screens count down
-// to the same shared moment rather than each starting their own local
-// timer, which is what actually keeps the ritual in sync. 7s (not 4s)
-// because the round trip for the clicking user's OWN screen to hear this
-// back over realtime can itself eat 1-3s, otherwise leaving barely any
-// visible countdown by the time it arrives. The action also returns
-// startedAt directly so the caller can apply it optimistically instead of
-// waiting on that same round trip.
+// started_at is set several seconds in the future — both screens count
+// down to the same shared moment rather than each starting their own
+// local timer, which is what actually keeps the ritual in sync. 13s (not
+// 4-7s) because the realistic flow is: open Netflix, switch back to
+// SoulSync, start the countdown, then switch to Netflix ONE more time to
+// hit play — that app-switch alone can eat several seconds, on top of the
+// round trip for the clicking user's own screen to hear this back over
+// realtime. The action also returns startedAt directly so the caller can
+// apply it optimistically instead of waiting on that same round trip.
 export async function startMovieNightCountdown(movieNightId: string) {
   const actor = await getActor();
   if (!actor) return { ok: false as const };
   const { supabase } = actor;
 
-  const startedAt = new Date(Date.now() + 7000).toISOString();
+  const startedAt = new Date(Date.now() + 13000).toISOString();
   const { error } = await supabase
     .from("movie_nights")
     .update({ status: "live", started_at: startedAt })
@@ -91,13 +96,17 @@ export async function startMovieNightCountdown(movieNightId: string) {
 
 export async function endMovieNight(movieNightId: string) {
   const actor = await getActor();
-  if (!actor) return;
+  if (!actor) return { ok: false };
   const { supabase } = actor;
 
   const { error } = await supabase.from("movie_nights").update({ status: "ended" }).eq("id", movieNightId);
-  if (error) console.error("[endMovieNight] update failed:", error.message);
+  if (error) {
+    console.error("[endMovieNight] update failed:", error.message);
+    return { ok: false };
+  }
 
   revalidatePath("/movie-night");
+  return { ok: true };
 }
 
 // For scheduled-but-not-yet-started movie nights only — a real "never

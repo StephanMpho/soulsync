@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { HeartbeatIndicator } from "../HeartbeatIndicator";
 import {
   scheduleMovieNight,
   startMovieNightCountdown,
@@ -50,7 +51,7 @@ function fmtWhen(iso: string) {
   });
 }
 
-function ScheduleForm({ onScheduled }: { onScheduled: () => void }) {
+function ScheduleForm({ onScheduled }: { onScheduled: (row: MovieNight) => void }) {
   const [title, setTitle] = useState("");
   const [service, setService] = useState<(typeof SERVICES)[number]>("Netflix");
   const [scheduledAtLocal, setScheduledAtLocal] = useState("");
@@ -69,11 +70,11 @@ function ScheduleForm({ onScheduled }: { onScheduled: () => void }) {
     setError(false);
     startTransition(async () => {
       const result = await scheduleMovieNight(formData);
-      if (result?.ok) {
+      if (result?.ok && result.movieNight) {
         setTitle("");
         setScheduledAtLocal("");
         setUrl("");
-        onScheduled();
+        onScheduled(result.movieNight as MovieNight);
       } else {
         setError(true);
       }
@@ -145,7 +146,13 @@ function ScheduleForm({ onScheduled }: { onScheduled: () => void }) {
   );
 }
 
-function UpcomingCard({ movieNight }: { movieNight: MovieNight }) {
+function UpcomingCard({
+  movieNight,
+  onStarted,
+}: {
+  movieNight: MovieNight;
+  onStarted: (id: string, startedAt: string) => void;
+}) {
   const [pending, startTransition] = useTransition();
   const link = movieNight.url || SERVICE_LINKS[movieNight.service];
 
@@ -173,7 +180,10 @@ function UpcomingCard({ movieNight }: { movieNight: MovieNight }) {
         onClick={() => {
           const id = movieNight.id;
           startTransition(async () => {
-            await startMovieNightCountdown(id);
+            const result = await startMovieNightCountdown(id);
+            // Applied locally right away — waiting on the realtime round
+            // trip alone can eat 1-3s, leaving almost no visible countdown.
+            if (result?.ok && result.startedAt) onStarted(id, result.startedAt);
           });
         }}
       >
@@ -225,7 +235,23 @@ function HistoryCard({ movieNight }: { movieNight: MovieNight }) {
   );
 }
 
-function LiveOverlay({ movieNight, displayName }: { movieNight: MovieNight; displayName: string }) {
+function LiveOverlay({
+  movieNight,
+  displayName,
+  coupleId,
+  userId,
+  partnerId,
+  partnerName,
+  onEnded,
+}: {
+  movieNight: MovieNight;
+  displayName: string;
+  coupleId: string;
+  userId: string;
+  partnerId: string;
+  partnerName: string;
+  onEnded: (id: string) => void;
+}) {
   const [floats, setFloats] = useState<Float[]>([]);
   const [pending, startTransition] = useTransition();
   const [, setTick] = useState(0);
@@ -285,6 +311,9 @@ function LiveOverlay({ movieNight, displayName }: { movieNight: MovieNight; disp
         <div className="ss-mn-nowtitle">
           <span className="ss-mn-dot" />
           Watching together
+          <span style={{ marginLeft: 6 }}>
+            <HeartbeatIndicator coupleId={coupleId} userId={userId} partnerId={partnerId} partnerName={partnerName} />
+          </span>
         </div>
         <div className="ss-mn-timer">{fmtElapsed(elapsed)}</div>
       </div>
@@ -293,7 +322,15 @@ function LiveOverlay({ movieNight, displayName }: { movieNight: MovieNight; disp
         className="ss-mn-endbtn"
         type="button"
         disabled={pending}
-        onClick={() => startTransition(() => endMovieNight(movieNight.id))}
+        onClick={() => {
+          const id = movieNight.id;
+          startTransition(async () => {
+            const result = await endMovieNight(id);
+            // Same reasoning as starting the countdown — apply locally
+            // instead of waiting on the realtime round trip to hear it back.
+            if (result?.ok) onEnded(id);
+          });
+        }}
       >
         End movie night
       </button>
@@ -320,12 +357,16 @@ function LiveOverlay({ movieNight, displayName }: { movieNight: MovieNight; disp
 
 export function MovieNightRoom({
   coupleId,
+  userId,
   displayName,
+  partnerId,
+  partnerName,
   initial,
 }: {
   coupleId: string;
   userId: string;
   displayName: string;
+  partnerId: string;
   partnerName: string;
   initial: MovieNight[];
 }) {
@@ -362,6 +403,10 @@ export function MovieNightRoom({
     };
   }, [coupleId]);
 
+  const patchLocal = (id: string, patch: Partial<MovieNight>) => {
+    setMovieNights((list) => list.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  };
+
   const live = movieNights.find((m) => m.status === "live") ?? null;
   const upcoming = movieNights
     .filter((m) => m.status === "scheduled")
@@ -372,10 +417,25 @@ export function MovieNightRoom({
 
   return (
     <>
-      {live && <LiveOverlay movieNight={live} displayName={displayName} />}
+      {live && (
+        <LiveOverlay
+          movieNight={live}
+          displayName={displayName}
+          coupleId={coupleId}
+          userId={userId}
+          partnerId={partnerId}
+          partnerName={partnerName}
+          onEnded={(id) => patchLocal(id, { status: "ended" })}
+        />
+      )}
 
       {showForm ? (
-        <ScheduleForm onScheduled={() => setShowForm(false)} />
+        <ScheduleForm
+          onScheduled={(row) => {
+            setMovieNights((list) => [row, ...list]);
+            setShowForm(false);
+          }}
+        />
       ) : (
         <button className="ss-btn solid" type="button" onClick={() => setShowForm(true)}>
           ＋ Schedule another Movie Night
@@ -388,7 +448,11 @@ export function MovieNightRoom({
             Upcoming
           </div>
           {upcoming.map((m) => (
-            <UpcomingCard key={m.id} movieNight={m} />
+            <UpcomingCard
+              key={m.id}
+              movieNight={m}
+              onStarted={(id, startedAt) => patchLocal(id, { status: "live", started_at: startedAt })}
+            />
           ))}
         </>
       )}

@@ -54,6 +54,7 @@ export default async function MovieNightPage() {
           coupleId={coupleId}
           userId={userId}
           displayName={displayName}
+          partnerId={partner.id}
           partnerName={partner.display_name}
           initial={movieNights ?? []}
         />
