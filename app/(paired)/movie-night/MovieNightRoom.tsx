@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { HeartbeatIndicator } from "../HeartbeatIndicator";
 import {
   scheduleMovieNight,
   startMovieNightCountdown,
@@ -238,18 +237,10 @@ function HistoryCard({ movieNight }: { movieNight: MovieNight }) {
 function LiveOverlay({
   movieNight,
   displayName,
-  coupleId,
-  userId,
-  partnerId,
-  partnerName,
   onEnded,
 }: {
   movieNight: MovieNight;
   displayName: string;
-  coupleId: string;
-  userId: string;
-  partnerId: string;
-  partnerName: string;
   onEnded: (id: string) => void;
 }) {
   const [floats, setFloats] = useState<Float[]>([]);
@@ -311,9 +302,6 @@ function LiveOverlay({
         <div className="ss-mn-nowtitle">
           <span className="ss-mn-dot" />
           Watching together
-          <span style={{ marginLeft: 6 }}>
-            <HeartbeatIndicator coupleId={coupleId} userId={userId} partnerId={partnerId} partnerName={partnerName} />
-          </span>
         </div>
         <div className="ss-mn-timer">{fmtElapsed(elapsed)}</div>
       </div>
@@ -357,10 +345,7 @@ function LiveOverlay({
 
 export function MovieNightRoom({
   coupleId,
-  userId,
   displayName,
-  partnerId,
-  partnerName,
   initial,
 }: {
   coupleId: string;
@@ -421,10 +406,6 @@ export function MovieNightRoom({
         <LiveOverlay
           movieNight={live}
           displayName={displayName}
-          coupleId={coupleId}
-          userId={userId}
-          partnerId={partnerId}
-          partnerName={partnerName}
           onEnded={(id) => patchLocal(id, { status: "ended" })}
         />
       )}
