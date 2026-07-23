@@ -21,6 +21,7 @@ type MovieNight = {
   status: "scheduled" | "live" | "ended";
   started_at: string | null;
   created_by: string;
+  url: string | null;
 };
 
 type Float = { id: number; emoji: string; from: string; x: number };
@@ -53,6 +54,7 @@ export function MovieNightRoom({
   const [title, setTitle] = useState("");
   const [service, setService] = useState<(typeof SERVICES)[number]>("Netflix");
   const [scheduledAtLocal, setScheduledAtLocal] = useState("");
+  const [url, setUrl] = useState("");
 
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
   const floatId = useRef(0);
@@ -104,9 +106,11 @@ export function MovieNightRoom({
     formData.set("title", title.trim());
     formData.set("service", service);
     formData.set("scheduledAtIso", iso);
+    formData.set("url", url.trim());
     startTransition(() => scheduleMovieNight(formData));
     setTitle("");
     setScheduledAtLocal("");
+    setUrl("");
   };
 
   const logToTimeline = () => {
@@ -157,6 +161,21 @@ export function MovieNightRoom({
           value={scheduledAtLocal}
           onChange={(e) => setScheduledAtLocal(e.target.value)}
         />
+        <label className="ss-field-label" htmlFor="mn-url">
+          Link to the title (optional)
+        </label>
+        <input
+          id="mn-url"
+          type="url"
+          className="ss-input"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://www.netflix.com/title/..."
+        />
+        <p className="ss-muted" style={{ marginTop: 4 }}>
+          Paste the direct link to the title on {service} — &quot;Open&quot; will jump straight to it instead of the
+          homepage.
+        </p>
         <button
           className="ss-btn solid"
           type="button"
@@ -172,7 +191,7 @@ export function MovieNightRoom({
 
   if (movieNight.status === "scheduled") {
     const when = new Date(movieNight.scheduled_at);
-    const link = SERVICE_LINKS[movieNight.service];
+    const link = movieNight.url || SERVICE_LINKS[movieNight.service];
     return (
       <section className="ss-mn-card">
         <div className="ss-mn-kicker">Movie Night ✦ {displayName} &amp; {partnerName}</div>

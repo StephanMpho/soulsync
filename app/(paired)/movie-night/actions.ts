@@ -5,6 +5,18 @@ import { getActor } from "@/lib/actor";
 import { logActivity } from "@/lib/activity";
 import { notifyPartner } from "@/lib/notify";
 
+// Only http(s) — blocks javascript:/data: URIs from ending up in an <a
+// href> that either partner might click.
+function isSafeExternalUrl(value: unknown): value is string {
+  if (typeof value !== "string" || !value.trim()) return false;
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 // scheduledAtIso must already be a UTC ISO string computed client-side from
 // the browser's own local time — converting a bare "YYYY-MM-DDTHH:mm" value
 // on the server would interpret it in the server's timezone (UTC on
@@ -13,6 +25,7 @@ export async function scheduleMovieNight(formData: FormData) {
   const title = formData.get("title");
   const service = formData.get("service");
   const scheduledAtIso = formData.get("scheduledAtIso");
+  const url = formData.get("url");
   if (typeof title !== "string" || !title.trim()) return;
   if (typeof scheduledAtIso !== "string" || Number.isNaN(Date.parse(scheduledAtIso))) return;
 
@@ -21,12 +34,14 @@ export async function scheduleMovieNight(formData: FormData) {
   const { supabase, userId, displayName, coupleId } = actor;
 
   const serviceValue = typeof service === "string" && service.trim() ? service.trim() : "Other";
+  const urlValue = isSafeExternalUrl(url) ? url.trim() : null;
 
   await supabase.from("movie_nights").insert({
     couple_id: coupleId,
     title: title.trim(),
     service: serviceValue,
     scheduled_at: scheduledAtIso,
+    url: urlValue,
     created_by: userId,
   });
 

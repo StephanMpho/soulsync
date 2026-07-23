@@ -10,6 +10,7 @@ type MovieNight = {
   status: "scheduled" | "live" | "ended";
   started_at: string | null;
   created_by: string;
+  url: string | null;
 };
 
 export default async function MovieNightPage() {
@@ -17,7 +18,7 @@ export default async function MovieNightPage() {
 
   const { data: current } = await supabase
     .from("movie_nights")
-    .select("id, title, service, scheduled_at, status, started_at, created_by")
+    .select("id, title, service, scheduled_at, status, started_at, created_by, url")
     .eq("couple_id", coupleId)
     .in("status", ["scheduled", "live"])
     .order("scheduled_at", { ascending: false })
