@@ -26,17 +26,17 @@ export async function scheduleMovieNight(formData: FormData) {
   const service = formData.get("service");
   const scheduledAtIso = formData.get("scheduledAtIso");
   const url = formData.get("url");
-  if (typeof title !== "string" || !title.trim()) return;
-  if (typeof scheduledAtIso !== "string" || Number.isNaN(Date.parse(scheduledAtIso))) return;
+  if (typeof title !== "string" || !title.trim()) return { ok: false };
+  if (typeof scheduledAtIso !== "string" || Number.isNaN(Date.parse(scheduledAtIso))) return { ok: false };
 
   const actor = await getActor();
-  if (!actor) return;
+  if (!actor) return { ok: false };
   const { supabase, userId, displayName, coupleId } = actor;
 
   const serviceValue = typeof service === "string" && service.trim() ? service.trim() : "Other";
   const urlValue = isSafeExternalUrl(url) ? url.trim() : null;
 
-  await supabase.from("movie_nights").insert({
+  const { error: insertError } = await supabase.from("movie_nights").insert({
     couple_id: coupleId,
     title: title.trim(),
     service: serviceValue,
@@ -44,6 +44,10 @@ export async function scheduleMovieNight(formData: FormData) {
     url: urlValue,
     created_by: userId,
   });
+  if (insertError) {
+    console.error("[scheduleMovieNight] insert failed:", insertError.message, insertError.details, insertError.hint);
+    return { ok: false };
+  }
 
   const text = `${displayName} scheduled Movie Night: "${title.trim()}"`;
   await logActivity(supabase, coupleId, userId, "movie_night", text);
@@ -54,6 +58,7 @@ export async function scheduleMovieNight(formData: FormData) {
   });
 
   revalidatePath("/movie-night");
+  return { ok: true };
 }
 
 // started_at is set a few seconds in the future — both screens count down
@@ -65,7 +70,11 @@ export async function startMovieNightCountdown(movieNightId: string) {
   const { supabase } = actor;
 
   const startedAt = new Date(Date.now() + 4000).toISOString();
-  await supabase.from("movie_nights").update({ status: "live", started_at: startedAt }).eq("id", movieNightId);
+  const { error } = await supabase
+    .from("movie_nights")
+    .update({ status: "live", started_at: startedAt })
+    .eq("id", movieNightId);
+  if (error) console.error("[startMovieNightCountdown] update failed:", error.message);
 
   revalidatePath("/movie-night");
 }
@@ -75,7 +84,8 @@ export async function endMovieNight(movieNightId: string) {
   if (!actor) return;
   const { supabase } = actor;
 
-  await supabase.from("movie_nights").update({ status: "ended" }).eq("id", movieNightId);
+  const { error } = await supabase.from("movie_nights").update({ status: "ended" }).eq("id", movieNightId);
+  if (error) console.error("[endMovieNight] update failed:", error.message);
 
   revalidatePath("/movie-night");
 }
@@ -85,7 +95,8 @@ export async function cancelMovieNight(movieNightId: string) {
   if (!actor) return;
   const { supabase } = actor;
 
-  await supabase.from("movie_nights").delete().eq("id", movieNightId);
+  const { error } = await supabase.from("movie_nights").delete().eq("id", movieNightId);
+  if (error) console.error("[cancelMovieNight] delete failed:", error.message);
 
   revalidatePath("/movie-night");
 }

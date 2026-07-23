@@ -55,6 +55,7 @@ export function MovieNightRoom({
   const [service, setService] = useState<(typeof SERVICES)[number]>("Netflix");
   const [scheduledAtLocal, setScheduledAtLocal] = useState("");
   const [url, setUrl] = useState("");
+  const [scheduleError, setScheduleError] = useState(false);
 
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
   const floatId = useRef(0);
@@ -107,10 +108,17 @@ export function MovieNightRoom({
     formData.set("service", service);
     formData.set("scheduledAtIso", iso);
     formData.set("url", url.trim());
-    startTransition(() => scheduleMovieNight(formData));
-    setTitle("");
-    setScheduledAtLocal("");
-    setUrl("");
+    setScheduleError(false);
+    startTransition(async () => {
+      const result = await scheduleMovieNight(formData);
+      if (result?.ok) {
+        setTitle("");
+        setScheduledAtLocal("");
+        setUrl("");
+      } else {
+        setScheduleError(true);
+      }
+    });
   };
 
   const logToTimeline = () => {
@@ -176,6 +184,7 @@ export function MovieNightRoom({
           Paste the direct link to the title on {service} — &quot;Open&quot; will jump straight to it instead of the
           homepage.
         </p>
+        {scheduleError && <p className="ss-error">Couldn&apos;t schedule that — please try again.</p>}
         <button
           className="ss-btn solid"
           type="button"
