@@ -20,12 +20,13 @@ export default async function MovieNightPage() {
   // Every movie night for the couple — scheduled, live, and ended — so
   // several can be scheduled at once and past ones stay as real history
   // instead of only ever showing a single "current" one.
-  const { data: movieNights } = await supabase
+  const { data: movieNights, error: movieNightsError } = await supabase
     .from("movie_nights")
     .select("id, title, service, scheduled_at, status, started_at, created_by, url, logged_at")
     .eq("couple_id", coupleId)
     .order("created_at", { ascending: false })
     .overrideTypes<MovieNight[]>();
+  if (movieNightsError) console.error("[MovieNightPage] fetch failed:", movieNightsError.message);
 
   return (
     <>
